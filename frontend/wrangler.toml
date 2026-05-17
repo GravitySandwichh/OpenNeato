@@ -8,6 +8,11 @@ preview_urls = false
 
 assets = { directory = "dist", binding = "ASSETS" }
 
+[[rules]]
+type = "Text"
+globs = ["**/*.jsonl"]
+fallthrough = true
+
 [vars]
 DEMO_MODE = "true"
 

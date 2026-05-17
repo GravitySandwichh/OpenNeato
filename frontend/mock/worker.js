@@ -1,3 +1,7 @@
+import mapdataEmpty04 from "./mapdata-empty-04.jsonl";
+import mapdataHouse03 from "./mapdata-house-03.jsonl";
+import mapdataSpot01 from "./mapdata-spot-01.jsonl";
+import mapdataSpot02 from "./mapdata-spot-02.jsonl";
 import { createMockApi } from "./shared-api.js";
 import { createScenarioState, scenarioCookie, scenarioFromRequest } from "./shared-state.js";
 
@@ -14,6 +18,13 @@ const json = (data, status = 200) =>
     });
 
 const err = (message, status = 500) => json({ error: message }, status);
+
+const historyFixtures = [
+    ["mapdata-empty-04.jsonl", mapdataEmpty04],
+    ["mapdata-house-03.jsonl", mapdataHouse03],
+    ["mapdata-spot-01.jsonl", mapdataSpot01],
+    ["mapdata-spot-02.jsonl", mapdataSpot02],
+];
 
 async function handleCollect(request) {
     try {
@@ -49,32 +60,46 @@ async function handleCollect(request) {
 }
 
 const createDefaultHistory = () => {
-    const now = Math.floor(Date.now() / 1000);
-    const house = `${now - 7200}`;
-    const spot = `${now - 3600}`;
-
-    return new Map([
-        [
-            `${house}.jsonl.hs`,
-            [
-                `{"type":"session","time":${house},"mode":"house","battery":95}`,
-                '{"x":0.0,"y":0.0,"t":0.0,"ts":0.0}',
-                '{"x":0.5,"y":0.2,"t":15.0,"ts":4.0}',
-                '{"x":1.2,"y":0.8,"t":45.0,"ts":10.0}',
-                '{"type":"summary","duration":1800,"distanceTraveled":34.5,"areaCovered":26.2,"batteryEnd":62}',
-            ],
-        ],
-        [
-            `${spot}.jsonl.hs`,
-            [
-                `{"type":"session","time":${spot},"mode":"spot","battery":80}`,
-                '{"x":0.0,"y":0.0,"t":0.0,"ts":0.0}',
-                '{"x":0.3,"y":0.3,"t":45.0,"ts":2.0}',
-                '{"type":"summary","duration":420,"distanceTraveled":8.4,"areaCovered":4.1,"batteryEnd":71}',
-            ],
-        ],
-    ]);
+    return new Map(
+        historyFixtures.map(([name, content]) => [
+            name,
+            content
+                .trim()
+                .split("\n")
+                .filter((line) => line.length > 0),
+        ]),
+    );
 };
+
+function startRecordingTimer() {
+    const recordingFile = [...context.historySessions.entries()].find(
+        ([, lines]) => !lines.some((line) => line.includes('"type":"summary"')),
+    );
+    if (!recordingFile) return;
+
+    const [recordingName, recordingLines] = recordingFile;
+    const lastPose = [...recordingLines].reverse().find((line) => line.includes('"x":'));
+    const pos = lastPose ? JSON.parse(lastPose) : { x: 0, y: 0, t: 0, ts: 7244 };
+    let simX = pos.x;
+    let simY = pos.y;
+    let simT = pos.t;
+    let simTs = pos.ts;
+
+    setInterval(() => {
+        simT += (Math.random() - 0.5) * 30;
+        if (simT < 0) simT += 360;
+        if (simT >= 360) simT -= 360;
+        const rad = (simT * Math.PI) / 180;
+        const step = 0.08 + Math.random() * 0.12;
+        simX += Math.cos(rad) * step;
+        simY -= Math.sin(rad) * step;
+        simTs += 2.0 + Math.random() * 0.3;
+        const lines = context.historySessions.get(recordingName);
+        if (!lines) return;
+        if (lines.length > 1) lines.splice(1, 1);
+        lines.push(`{"x":${simX.toFixed(3)},"y":${simY.toFixed(3)},"t":${simT.toFixed(1)},"ts":${simTs.toFixed(1)}}`);
+    }, 2000);
+}
 
 let initializedScenario = null;
 let bootTime = Date.now();
@@ -103,6 +128,9 @@ function initScenario(rawScenario) {
     bootTime = Date.now();
     initializedScenario = scenario;
 }
+
+initScenario("ok");
+startRecordingTimer();
 
 const toWorkerResponse = (response) => {
     if (response === false) return err("not found", 404);
