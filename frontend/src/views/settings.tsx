@@ -24,6 +24,7 @@ import { ErrorBannerStack, useErrorStack } from "../components/error-banner";
 import { Icon } from "../components/icon";
 import { useNavigate } from "../components/router";
 import { useDirtyGuard } from "../hooks/use-dirty-guard";
+import { usePoll } from "../hooks/use-poll";
 import { usePolling } from "../hooks/use-polling";
 import type { FirmwareVersion, SystemData, UserSettingsData } from "../types";
 import { normalizeError } from "../utils";
@@ -194,43 +195,39 @@ export function SettingsView({ theme, onThemeChange, firmware }: SettingsViewPro
     const [showRobotRestartConfirm, setShowRobotRestartConfirm] = useState(false);
     const [showRobotShutdownConfirm, setShowRobotShutdownConfirm] = useState(false);
     const [robotRestarting, setRobotRestarting] = useState(false);
-    const robotRestartPollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [robotRestartPolling, setRobotRestartPolling] = useState(false);
     const robotRestartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         return () => {
-            if (robotRestartPollTimer.current) clearTimeout(robotRestartPollTimer.current);
             if (robotRestartTimeout.current) clearTimeout(robotRestartTimeout.current);
         };
     }, []);
+
+    usePoll(
+        async () => {
+            await api.getState();
+            if (robotRestartTimeout.current) clearTimeout(robotRestartTimeout.current);
+            robotRestartTimeout.current = null;
+            setRobotRestarting(false);
+            setRobotRestartPolling(false);
+        },
+        2000,
+        robotRestartPolling,
+        2000,
+    );
 
     const handleRobotRestart = useCallback(() => {
         setRobotRestarting(true);
 
         robotRestartTimeout.current = setTimeout(() => {
-            if (robotRestartPollTimer.current) clearTimeout(robotRestartPollTimer.current);
-            robotRestartPollTimer.current = null;
-            robotRestartTimeout.current = null;
+            setRobotRestartPolling(false);
             setRobotRestarting(false);
             errorStack.push("Robot did not recover after restart — check physical connection");
         }, 30000);
 
         api.robotRestart()
-            .then(() => {
-                const poll = () => {
-                    api.getState()
-                        .then(() => {
-                            if (robotRestartTimeout.current) clearTimeout(robotRestartTimeout.current);
-                            robotRestartTimeout.current = null;
-                            robotRestartPollTimer.current = null;
-                            setRobotRestarting(false);
-                        })
-                        .catch(() => {
-                            robotRestartPollTimer.current = setTimeout(poll, 2000);
-                        });
-                };
-                robotRestartPollTimer.current = setTimeout(poll, 2000);
-            })
+            .then(() => setRobotRestartPolling(true))
             .catch((e: unknown) => {
                 if (robotRestartTimeout.current) clearTimeout(robotRestartTimeout.current);
                 robotRestartTimeout.current = null;

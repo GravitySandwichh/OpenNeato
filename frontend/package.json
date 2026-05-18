@@ -6,10 +6,11 @@
     "scripts": {
         "dev": "npm run gen:types && vite",
         "gen:types": "openapi-typescript --root-types --root-types-no-schema-prefix --output src/types.generated.ts api/openapi.yaml",
-        "build:demo": "node scripts/write_demo_build_info.js && biome check && npm run gen:types && node scripts/check_api_paths.js && tsc --noEmit && vite build --mode demo",
-        "build": "biome check && npm run gen:types && node scripts/check_api_paths.js && tsc --noEmit && vite build && node scripts/embed_frontend.js",
+        "build:demo": "node scripts/write_demo_build_info.js && biome check && jscpd src/ && npm run gen:types && node scripts/check_api_paths.js && tsc --noEmit && vite build --mode demo",
+        "build": "biome check && jscpd src/ && npm run gen:types && node scripts/check_api_paths.js && tsc --noEmit && vite build && node scripts/embed_frontend.js",
         "preview": "vite preview",
         "check": "biome check",
+        "dupes": "jscpd src/",
         "fix": "biome check --write",
         "fix:unsafe": "biome check --write --unsafe"
     },
@@ -19,6 +20,7 @@
     "devDependencies": {
         "@biomejs/biome": "2.4.15",
         "@preact/preset-vite": "2.10.5",
+        "jscpd": "4.2.2",
         "openapi-typescript": "7.13.0",
         "typescript": "6.0.3",
         "vite": "8.0.13",

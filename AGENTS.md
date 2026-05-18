@@ -25,7 +25,7 @@ Three top-level components: `firmware/` (ESP32 C/C++), `frontend/` (Preact SPA),
 - Flash tool: Go CLI, cross-compiled via GoReleaser, uses esptool subprocess
 - Mock server: `frontend/mock/server.js` Vite plugin, `SCENARIO` constant for state switching. Reset to `"ok"` before
   committing.
-- Build pipeline: `npm run build` -> lint -> `openapi-typescript` regenerates `src/types.generated.ts` from
+- Build pipeline: `npm run build` -> lint -> `jscpd` duplicate check -> `openapi-typescript` regenerates `src/types.generated.ts` from
   `frontend/api/openapi.yaml` -> `check_api_paths.js` enforces firmware↔spec route parity -> tsc -> vite ->
   `embed_frontend.js` generates `web_assets.h`. `frontend/api/openapi.yaml` ships as a release asset.
 
@@ -85,8 +85,9 @@ Verify GitHub Actions workflow changes: install `actionlint` if missing, then ru
 ```bash
 cd frontend
 npm run dev          # Vite dev server with mock API
-npm run build        # Lint + type check + build + embed into firmware header
+npm run build        # Lint + duplicate check + type check + build + embed into firmware header
 npm run check        # Biome lint/format check
+npm run dupes        # Duplicate code check via jscpd
 npm run fix          # Auto-fix safe issues
 ```
 

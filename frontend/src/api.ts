@@ -83,10 +83,10 @@ async function fetchSessionData(filename: string): Promise<MapData[]> {
     return parseMapData(raw);
 }
 
-function importSession(file: File, onProgress: (pct: number) => void): Promise<void> {
+function uploadFile(url: string, file: File, onProgress: (pct: number) => void): Promise<void> {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/history/import");
+        xhr.open("POST", url);
         xhr.upload.addEventListener("progress", (e) => {
             if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
         });
@@ -110,31 +110,12 @@ function importSession(file: File, onProgress: (pct: number) => void): Promise<v
     });
 }
 
+function importSession(file: File, onProgress: (pct: number) => void): Promise<void> {
+    return uploadFile("/api/history/import", file, onProgress);
+}
+
 function uploadFirmware(file: File, md5: string, onProgress: (pct: number) => void): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", `/api/firmware/update?hash=${md5}`);
-        xhr.upload.addEventListener("progress", (e) => {
-            if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-        });
-        xhr.addEventListener("load", () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                resolve();
-            } else {
-                try {
-                    const data = JSON.parse(xhr.responseText);
-                    reject(new Error(data.error || `${xhr.status} ${xhr.statusText}`));
-                } catch {
-                    reject(new Error(`${xhr.status} ${xhr.statusText}`));
-                }
-            }
-        });
-        xhr.addEventListener("error", () => reject(new Error("Network error during upload")));
-        xhr.addEventListener("abort", () => reject(new Error("Upload aborted")));
-        const form = new FormData();
-        form.append("file", file);
-        xhr.send(form);
-    });
+    return uploadFile(`/api/firmware/update?hash=${md5}`, file, onProgress);
 }
 
 export const api = {

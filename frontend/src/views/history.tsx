@@ -5,6 +5,7 @@ import { ConfirmDialog } from "../components/confirm-dialog";
 import { ErrorBannerStack, useErrorStack } from "../components/error-banner";
 import { Icon } from "../components/icon";
 import { useNavigate, usePath } from "../components/router";
+import { usePoll } from "../hooks/use-poll";
 import type { HistoryFileInfo, MapData } from "../types";
 import { normalizeError } from "../utils";
 import { HistoryItemView } from "./history/item";
@@ -58,27 +59,22 @@ export function HistoryView() {
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Poll list + active recording session map (every 5s while recording)
-    useEffect(() => {
-        if (!hasRecording) return;
-        const interval = setInterval(async () => {
-            try {
-                const fileList = await api.getHistoryList();
-                setFiles(sortByDateDesc(fileList));
+    usePoll(
+        async () => {
+            const fileList = await api.getHistoryList();
+            setFiles(sortByDateDesc(fileList));
 
-                // If the detail view shows the recording session, refresh its map
-                if (selectedName) {
-                    const file = fileList.find((f) => f.name === selectedName);
-                    if (file?.recording) {
-                        const maps = await api.getHistorySession(file.name);
-                        if (maps.length > 0) setSelectedMap(maps[0]);
-                    }
+            if (selectedName) {
+                const file = fileList.find((f) => f.name === selectedName);
+                if (file?.recording) {
+                    const maps = await api.getHistorySession(file.name);
+                    if (maps.length > 0) setSelectedMap(maps[0]);
                 }
-            } catch {
-                // Silently ignore poll errors
             }
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [hasRecording, selectedName]);
+        },
+        5000,
+        hasRecording,
+    );
 
     // Fetch full session data when URL points to a file
     useEffect(() => {
