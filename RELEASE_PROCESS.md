@@ -96,7 +96,7 @@ opencode will:
 
 ## Prereleases
 
-Prereleases let you build and publish full release artifacts from a PR branch for testing before merging.
+Prereleases let you build and publish full release artifacts from a PR or branch for testing before merging or releasing.
 
 ### Triggering
 
@@ -104,23 +104,30 @@ Prereleases let you build and publish full release artifacts from a PR branch fo
 
 **From the CLI:**
 ```bash
+gh workflow run prerelease.yml -f pr_number=<pr-number>
+```
+
+For a branch-only prerelease, omit `pr_number` and choose the branch ref:
+
+```bash
 gh workflow run prerelease.yml -r <branch-name>
 ```
 
 ### How it works
 
-1. Resolves the PR number and head commit from the branch
-2. Computes a tag based on the latest release: `v<base>-pr<number>.<sha>` (e.g. `v0.1-pr42.abc1234`)
-3. Deletes any previous prerelease for the same PR (tag + release)
+1. If `pr_number` is provided, resolves the PR head branch and commit
+2. If `pr_number` is omitted, uses the workflow ref as a branch-only prerelease source
+3. Computes a tag based on the latest release: `v<base>-pr<number>.<sha>` for PRs or `v<base>-<branch>.<sha>` for branches
 4. Builds frontend, firmware, and flash tool
 5. Publishes a GitHub prerelease via GoReleaser
-6. Posts a comment on the PR with the release link (when triggered via `/prerelease`)
+6. Posts a comment on the PR with the release link when triggered via `/prerelease`
 
 ### Notes
 
-- No CI gate — trigger whenever you want a test build
-- Previous prereleases for the same PR are automatically cleaned up
+- No CI gate - trigger whenever you want a test build
+- Previous prereleases are not automatically cleaned up; remove stale PR or branch prereleases manually when needed
 - The base version comes from the latest non-prerelease GitHub release (falls back to `v0.0`)
+- A prerelease is stale when its PR is merged or closed, its PR head SHA no longer matches, or a branch prerelease has been superseded by a later stable release
 
 ## Troubleshooting
 
