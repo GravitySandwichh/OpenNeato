@@ -15,16 +15,16 @@
         "fix:unsafe": "biome check --write --unsafe"
     },
     "dependencies": {
-        "preact": "10.29.1"
+        "preact": "10.29.2"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.4.15",
+        "@biomejs/biome": "2.4.16",
         "@preact/preset-vite": "2.10.5",
-        "jscpd": "4.2.2",
+        "jscpd": "4.2.4",
         "openapi-typescript": "7.13.0",
         "typescript": "6.0.3",
-        "vite": "8.0.13",
-        "wrangler": "4.92.0",
+        "vite": "8.0.15",
+        "wrangler": "4.95.0",
         "yaml": "2.9.0"
     }
 }
