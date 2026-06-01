@@ -17,9 +17,10 @@ Use `RELEASE_PROCESS.md` as the source of truth. This skill only adds agent-spec
 gh release list --exclude-pre-releases --limit 1
 ```
 
-4. Generate release notes from user-facing commits only, following the exact format in `RELEASE_PROCESS.md`.
-5. Show the release notes preview and ask for explicit approval before dispatching `release.yml`.
-6. Dispatch the release workflow only after approval:
+4. Identify contributors: collect commit authors from the range, then examine merged PRs (`gh pr list --state merged`) for testers and non-code contributors who helped with testing, feedback, or validation. Deduplicate into a single list.
+5. Generate release notes from user-facing commits only, following the exact format in `RELEASE_PROCESS.md`. Include a "Contributors" section with all identified contributors.
+6. Show the release notes preview and ask for explicit approval before dispatching `release.yml`.
+7. Dispatch the release workflow only after approval:
 
 ```bash
 gh workflow run release.yml -f release_tag="v<VERSION>" -f release_notes="<NOTES>" -f draft=true -f prerelease=false
