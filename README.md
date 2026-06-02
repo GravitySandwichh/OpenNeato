@@ -1,8 +1,3 @@
-[![CI](https://github.com/renjfk/OpenNeato/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/renjfk/OpenNeato/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Latest Release](https://img.shields.io/github/v/release/renjfk/OpenNeato)](https://github.com/renjfk/OpenNeato/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/renjfk/OpenNeato/total)](https://github.com/renjfk/OpenNeato/releases)
-
 <p align="center">
  <img width="192" alt="OpenNeato Icon" src="frontend/public/icon-192.png">
 </p>
