@@ -119,8 +119,60 @@ export function DashboardMap({ isCleaning, robotReady }: DashboardMapProps) {
             return;
         }
 
+        // Auto-align baseMap to liveMap to fix 90-degree rotation sync issues
+        let alignedBaseMap = baseMap;
+        if (baseMap && liveMap && liveMap.coverage.length > 5) {
+            const baseSet = new Set(baseMap.coverage.map((c) => `${c[0]},${c[1]}`));
+            let bestScore = -1;
+            let bestRot = 0;
+
+            for (const rot of [0, 90, 180, 270]) {
+                let score = 0;
+                for (const [cx, cy] of liveMap.coverage) {
+                    let rx = cx,
+                        ry = cy;
+                    if (rot === 90) {
+                        rx = cy;
+                        ry = -cx;
+                    } else if (rot === 180) {
+                        rx = -cx;
+                        ry = -cy;
+                    } else if (rot === 270) {
+                        rx = -cy;
+                        ry = cx;
+                    }
+                    if (baseSet.has(`${rx},${ry}`)) score++;
+                }
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestRot = rot;
+                }
+            }
+
+            if (bestRot !== 0 && bestScore > 0) {
+                alignedBaseMap = {
+                    ...baseMap,
+                    coverage: baseMap.coverage.map((cell) => {
+                        const [cx, cy, ts] = cell;
+                        if (bestRot === 90) return [-cy, cx, ts] as any;
+                        if (bestRot === 180) return [-cx, -cy, ts] as any;
+                        if (bestRot === 270) return [cy, -cx, ts] as any;
+                        return cell;
+                    }),
+                };
+                const { minX, maxX, minY, maxY } = baseMap.bounds!;
+                if (bestRot === 90) {
+                    alignedBaseMap.bounds = { minX: -maxY, maxX: -minY, minY: minX, maxY: maxX };
+                } else if (bestRot === 180) {
+                    alignedBaseMap.bounds = { minX: -maxX, maxX: -minX, minY: -maxY, maxY: -minY };
+                } else if (bestRot === 270) {
+                    alignedBaseMap.bounds = { minX: minY, maxX: maxY, minY: -maxX, maxY: -minX };
+                }
+            }
+        }
+
         // Combine bounds
-        let bounds = baseMap?.bounds;
+        let bounds = alignedBaseMap?.bounds;
         if (liveMap?.bounds) {
             if (!bounds) bounds = liveMap.bounds;
             else {
@@ -164,13 +216,13 @@ export function DashboardMap({ isCleaning, robotReady }: DashboardMapProps) {
         drawMapGrid(ctx, proj, isDark);
 
         // Draw base map coverage (dim)
-        if (baseMap) {
-            const cellPx = baseMap.cellSize * scale;
+        if (alignedBaseMap) {
+            const cellPx = alignedBaseMap.cellSize * scale;
             ctx.fillStyle = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)";
-            for (const cell of baseMap.coverage) {
+            for (const cell of alignedBaseMap.coverage) {
                 const [cx, cy] = cell;
-                const wx = cx * baseMap.cellSize;
-                const wy = cy * baseMap.cellSize;
+                const wx = cx * alignedBaseMap.cellSize;
+                const wy = cy * alignedBaseMap.cellSize;
                 ctx.fillRect(toX(wx) - cellPx / 2, toY(wy) - cellPx / 2, cellPx, cellPx);
             }
         }
