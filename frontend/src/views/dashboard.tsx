@@ -21,6 +21,7 @@ import wifiSvg from "../assets/icons/wifi.svg?raw";
 import wifiOffSvg from "../assets/icons/wifi-off.svg?raw";
 import robotSvg from "../assets/robot.svg?raw";
 import { BatteryIcon } from "../components/battery-icon";
+import { DashboardMap } from "../components/dashboard-map";
 import { ErrorBanner, ErrorBannerStack, useErrorStack } from "../components/error-banner";
 import { Icon } from "../components/icon";
 import { useNavigate } from "../components/router";
@@ -297,10 +298,6 @@ export function DashboardView({ firmware, state, isManual, updateInfo, robotRead
                 </div>
             ) : (
                 <div class="hero-area">
-                    <div class="robot-float">
-                        <Icon svg={robotSvg} />
-                    </div>
-
                     <div class="info-cards">
                         <div class="info-card">
                             <div class="info-card-left">
@@ -333,6 +330,10 @@ export function DashboardView({ firmware, state, isManual, updateInfo, robotRead
                                 <Icon svg={MODE_ICONS[mi.icon]} />
                             </div>
                         </div>
+                    </div>
+
+                    <div class="hero-map">
+                        <DashboardMap isCleaning={isCleaning} robotReady={robotReady} />
                     </div>
                 </div>
             )}
